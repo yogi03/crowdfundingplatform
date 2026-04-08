@@ -1,5 +1,6 @@
 import React, { useContext, createContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import detectEthereumProvider from '@metamask/detect-provider';
 import { ABI, CONTRACT_ADDRESS } from '../constants';
 
 const StateContext = createContext();
@@ -10,13 +11,17 @@ export const StateContextProvider = ({ children }) => {
   const [provider, setProvider] = useState(null);
 
   const connect = async () => {
-    if (!window.ethereum) return alert('Please install MetaMask');
+    const detectedProvider = await detectEthereumProvider();
+    
+    if (!detectedProvider) {
+      return alert('Please install MetaMask or another Web3 wallet, or check if it is enabled.');
+    }
 
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const accounts = await detectedProvider.request({ method: 'eth_requestAccounts' });
       setAddress(accounts[0]);
       
-      const _provider = new ethers.BrowserProvider(window.ethereum);
+      const _provider = new ethers.BrowserProvider(detectedProvider);
       const _signer = await _provider.getSigner();
       const _contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, _signer);
       
@@ -29,12 +34,16 @@ export const StateContextProvider = ({ children }) => {
 
   const createCampaign = async (form) => {
     try {
+      const deadline = new Date(form.deadline);
+      deadline.setHours(23, 59, 59, 999);
+
       const data = await contract.createCampaign(
         address, // owner
+        form.name, // creatorName
         form.title, // title
         form.description, // description
         form.target, // target
-        new Date(form.deadline).getTime() / 1000, // deadline
+        Math.floor(deadline.getTime() / 1000), // deadline
         form.image // image
       );
 
@@ -54,6 +63,7 @@ export const StateContextProvider = ({ children }) => {
 
       const parsedCampaigns = campaigns.map((campaign, i) => ({
         owner: campaign.owner,
+        creatorName: campaign.creatorName,
         title: campaign.title,
         description: campaign.description,
         target: ethers.formatEther(campaign.target.toString()),
@@ -61,10 +71,11 @@ export const StateContextProvider = ({ children }) => {
         amountCollected: ethers.formatEther(campaign.amountCollected.toString()),
         image: campaign.image,
         pId: i,
-        claimed: campaign.claimed
+        claimed: campaign.claimed,
+        isActive: campaign.isActive
       }));
 
-      return parsedCampaigns;
+      return parsedCampaigns.filter((campaign) => campaign.isActive);
     } catch (error) {
       console.log("Error fetching campaigns: ", error);
       return [];
@@ -120,19 +131,48 @@ export const StateContextProvider = ({ children }) => {
     }
   }
 
-  // Check if wallet is already connected
-  useEffect(() => {
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length > 0) {
-          setAddress(accounts[0]);
-          connect(); // Refresh contract/signer
-        } else {
-          setAddress('');
-          setContract(null);
-        }
-      });
+  const refundDonation = async (pId) => {
+    try {
+      const data = await contract.refund(pId);
+      await data.wait();
+      return data;
+    } catch (error) {
+      console.log("Refund error: ", error);
+      throw error;
     }
+  }
+
+  const deleteCampaign = async (pId) => {
+    try {
+      const data = await contract.deleteCampaign(pId);
+      await data.wait();
+      return data;
+    } catch (error) {
+      console.log("Delete campaign error: ", error);
+      throw error;
+    }
+  }
+
+  // Check if wallet is already connected and setup event listeners
+  useEffect(() => {
+    const handleAccountsChanged = (accounts) => {
+      if (accounts.length > 0) {
+        setAddress(accounts[0]);
+        connect(); // Refresh contract/signer
+      } else {
+        setAddress('');
+        setContract(null);
+      }
+    };
+
+    const setupProvider = async () => {
+      const detectedProvider = await detectEthereumProvider();
+      if (detectedProvider) {
+        detectedProvider.on('accountsChanged', handleAccountsChanged);
+      }
+    };
+
+    setupProvider();
   }, []);
 
   return (
@@ -147,6 +187,8 @@ export const StateContextProvider = ({ children }) => {
         donate,
         getDonations,
         claimFunds,
+        refundDonation,
+        deleteCampaign,
       }}
     >
       {children}

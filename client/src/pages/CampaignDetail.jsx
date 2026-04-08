@@ -10,12 +10,14 @@ const CampaignDetail = () => {
   const { id } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { donate, getDonations, contract, address, claimFunds, getCampaigns } = useStateContext();
+  const { donate, getDonations, contract, address, claimFunds, refundDonation, getCampaigns, deleteCampaign } = useStateContext();
 
   const [isLoading, setIsLoading] = useState(false);
   const [amount, setAmount] = useState('');
   const [donators, setDonators] = useState([]);
   const [campaign, setCampaign] = useState(state);
+
+  const hasDonated = donators.some(d => d.donator.toLowerCase() === address?.toLowerCase());
 
   const fetchDonators = async () => {
     const data = await getDonations(id);
@@ -64,6 +66,33 @@ const CampaignDetail = () => {
       }
   }
 
+  const handleRefund = async () => {
+      setIsLoading(true);
+      try {
+          await refundDonation(id);
+          navigate('/');
+          setIsLoading(false);
+      } catch (error) {
+          console.log(error);
+          setIsLoading(false);
+      }
+  }
+
+  const handleDelete = async () => {
+      const confirmDelete = window.confirm("Are you sure you want to delete this campaign? All donors will be automatically refunded.");
+      if(!confirmDelete) return;
+
+      setIsLoading(true);
+      try {
+          await deleteCampaign(id);
+          navigate('/');
+          setIsLoading(false);
+      } catch (error) {
+          console.log(error);
+          setIsLoading(false);
+      }
+  }
+
   if(!campaign && !isLoading) return <div className="text-white">Campaign not found</div>;
 
   return (
@@ -95,7 +124,7 @@ const CampaignDetail = () => {
                 <div className="w-[60%] h-[60%] bg-[#4acd8d] rounded-full" />
               </div>
               <div>
-                <h4 className="font-epilogue font-semibold text-[14px] text-white break-all">{campaign?.owner}</h4>
+                <h4 className="font-epilogue font-semibold text-[14px] text-white break-all">{campaign?.creatorName || 'Anonymous'} ({campaign?.owner})</h4>
                 <p className="mt-[4px] font-epilogue font-normal text-[12px] text-[#808191]">10 Campaigns</p>
               </div>
             </div>
@@ -162,6 +191,26 @@ const CampaignDetail = () => {
                   onClick={handleClaim}
                 >
                   Claim Funds
+                </button>
+              )}
+
+              {address?.toLowerCase() === campaign?.owner?.toLowerCase() && !campaign?.claimed && (
+                <button
+                  className="w-full mt-4 font-epilogue font-semibold text-[16px] leading-[26px] text-white min-h-[52px] px-4 rounded-[10px] bg-[#e63c3c]"
+                  onClick={handleDelete}
+                >
+                  Delete Campaign
+                </button>
+              )}
+
+              {hasDonated && 
+               daysLeft(campaign?.deadline) === 0 && 
+               parseFloat(campaign?.amountCollected) < parseFloat(campaign?.target) && (
+                <button
+                  className="w-full mt-4 font-epilogue font-semibold text-[16px] leading-[26px] text-white min-h-[52px] px-4 rounded-[10px] bg-[#e63c3c]"
+                  onClick={handleRefund}
+                >
+                  Request Refund
                 </button>
               )}
             </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { daysLeft, getGoogleDriveImage } from '../utils';
 
-const CampaignCard = ({ title, description, target, deadline, amountCollected, image, handleClick }) => {
+const CampaignCard = ({ title, description, target, deadline, amountCollected, image, creatorName, handleClick }) => {
   const remainingDays = daysLeft(deadline);
 
   return (
@@ -36,7 +36,7 @@ const CampaignCard = ({ title, description, target, deadline, amountCollected, i
             {/* Placeholder for owner avatar */}
             <div className="w-[60%] h-[60%] bg-[#4acd8d] rounded-full" />
           </div>
-          <p className="flex-1 font-epilogue font-normal text-[12px] text-[#808191] truncate">by <span className="text-[#b2b3bd]">CrowdGenesis</span></p>
+          <p className="flex-1 font-epilogue font-normal text-[12px] text-[#808191] truncate">by <span className="text-[#b2b3bd]">{creatorName || 'Anonymous'}</span></p>
         </div>
       </div>
     </div>

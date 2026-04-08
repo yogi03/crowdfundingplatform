@@ -7,6 +7,8 @@ async function main() {
 
   await CrowleyFunding.waitForDeployment();
 
+  const fs = require('fs');
+  fs.writeFileSync('address.txt', CrowleyFunding.target);
   console.log(`CrowdFunding deployed to: ${CrowleyFunding.target}`);
 }
 

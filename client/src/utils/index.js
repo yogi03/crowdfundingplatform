@@ -12,6 +12,16 @@ export const calculateBarPercentage = (target, amountCollected) => {
 };
 
 export const checkIfImage = (url, callback) => {
+  if (!url) {
+    callback(false);
+    return;
+  }
+
+  if (url.startsWith('data:image')) {
+    callback(true);
+    return;
+  }
+
   const img = new Image();
   img.src = url;
 
@@ -35,4 +45,61 @@ export const getGoogleDriveImage = (url) => {
   }
 
   return url;
+};
+
+export const compressImage = (file, maxWidth = 500, quality = 0.7) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert heavily to highly-compressed jpeg base64
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = (error) => reject(error);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+export const uploadImageToImgBB = async (base64Data) => {
+  try {
+    const rawData = base64Data.split(',')[1] || base64Data; // Get purely the base64 content
+    
+    const formData = new FormData();
+    formData.append('image', rawData);
+
+    const response = await fetch('https://api.imgbb.com/1/upload?key=7a36f040233e3dd6b7c177571780494e', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    if (result.status === 200) {
+      return result.data.url;
+    } else {
+      throw new Error(result.error?.message || 'Image upload failed');
+    }
+  } catch (error) {
+    console.error('Error uploading image to ImgBB:', error);
+    throw error;
+  }
 };

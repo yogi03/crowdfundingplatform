@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 
 import { useStateContext } from '../context';
 import { Loader } from '../components';
-import { checkIfImage } from '../utils';
+import { checkIfImage, compressImage, uploadImageToImgBB } from '../utils';
 
 const CreateCampaign = () => {
   const navigate = useNavigate();
@@ -22,6 +22,29 @@ const CreateCampaign = () => {
   const handleFormFieldChange = (fieldName, e) => {
     setForm({ ...form, [fieldName]: e.target.value })
   }
+
+  const handleImageChange = async (e) => {
+    e.preventDefault();
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB max
+        alert('File is too large! Please select an image under 5MB.');
+        e.target.value = '';
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const base64Image = await compressImage(file, 500, 0.7);
+        const imageUrl = await uploadImageToImgBB(base64Image);
+        setForm({ ...form, image: imageUrl });
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error compressing or uploading image:", error);
+        alert('Error uploading image to cloud. Please try another one.');
+        setIsLoading(false);
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -123,13 +146,19 @@ const CreateCampaign = () => {
         <div className="flex flex-col">
           <span className="font-epilogue font-medium text-[14px] leading-[22px] text-[#808191] mb-[10px]">Campaign image *</span>
           <input 
-            required
-            value={form.image}
-            onChange={(e) => handleFormFieldChange('image', e)}
-            type="url"
-            placeholder="Place image URL of your campaign"
-            className="py-[15px] sm:px-[25px] px-[15px] outline-none border-[1px] border-[#3a3a43] bg-transparent font-epilogue text-white text-[14px] placeholder:text-[#4b5264] rounded-[10px] sm:min-w-[300px]"
+            required={!form.image}
+            onChange={handleImageChange}
+            type="file"
+            accept="image/*"
+            className="py-[15px] sm:px-[25px] px-[15px] outline-none border-[1px] border-[#3a3a43] bg-transparent font-epilogue text-[#4b5264] text-[14px] rounded-[10px] sm:min-w-[300px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#8c6dfd] file:text-white hover:file:bg-[#6c4be0]"
           />
+          {form.image && (
+            <img 
+              src={form.image} 
+              alt="preview" 
+              className="mt-4 w-[250px] h-[150px] object-cover rounded-[10px]"
+            />
+          )}
         </div>
 
         <div className="flex justify-center items-center mt-[40px]">
