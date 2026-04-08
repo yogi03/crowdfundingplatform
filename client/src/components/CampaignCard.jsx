@@ -1,16 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { daysLeft, getGoogleDriveImage } from '../utils';
 
 const CampaignCard = ({ title, description, target, deadline, amountCollected, image, handleClick }) => {
-  const remainingDays = (deadline) => {
-    const difference = new Date(deadline * 1000).getTime() - Date.now();
-    const days = Math.ceil(difference / (1000 * 3600 * 24));
-    return days > 0 ? days : 0;
-  };
+  const remainingDays = daysLeft(deadline);
 
   return (
     <div className="sm:w-[288px] w-full rounded-[15px] bg-[#1c1c24] cursor-pointer" onClick={handleClick}>
-      <img src={image} alt="campaign" className="w-full h-[158px] object-cover rounded-[15px]"/>
+      <img src={getGoogleDriveImage(image)} alt="campaign" className="w-full h-[158px] object-cover rounded-[15px]"/>
 
       <div className="flex flex-col p-4">
         <div className="flex flex-row items-center mb-[18px]">
@@ -29,7 +26,7 @@ const CampaignCard = ({ title, description, target, deadline, amountCollected, i
             <p className="mt-[3px] font-epilogue font-normal text-[12px] leading-[18px] text-[#808191] sm:max-w-[120px] truncate">Raised of {target}</p>
           </div>
           <div className="flex flex-col">
-            <h4 className="font-epilogue font-semibold text-[14px] text-[#b2b3bd] leading-[22px]">{remainingDays(deadline)}</h4>
+            <h4 className="font-epilogue font-semibold text-[14px] text-[#b2b3bd] leading-[22px]">{remainingDays}</h4>
             <p className="mt-[3px] font-epilogue font-normal text-[12px] leading-[18px] text-[#808191] sm:max-w-[120px] truncate">Days Left</p>
           </div>
         </div>

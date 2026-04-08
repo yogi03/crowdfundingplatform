@@ -4,6 +4,7 @@ import { ethers } from 'ethers';
 
 import { useStateContext } from '../context';
 import { Loader } from '../components';
+import { checkIfImage } from '../utils';
 
 const CreateCampaign = () => {
   const navigate = useNavigate();
@@ -25,20 +26,22 @@ const CreateCampaign = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if(form.image && !form.image.startsWith('http')) {
+    checkIfImage(form.image, async (exists) => {
+      if (exists) {
+        setIsLoading(true);
+        try {
+          await createCampaign({ ...form, target: ethers.parseUnits(form.target, 18) })
+          setIsLoading(false);
+          navigate('/');
+        } catch (error) {
+          console.log(error);
+          setIsLoading(false);
+        }
+      } else {
         alert('Please provide a valid image URL');
-        return;
-    }
-
-    setIsLoading(true);
-    try {
-      await createCampaign({ ...form, target: ethers.parseUnits(form.target, 18) })
-      setIsLoading(false);
-      navigate('/');
-    } catch (error) {
-      console.log(error);
-      setIsLoading(false);
-    }
+        setForm({ ...form, image: '' });
+      }
+    })
   }
 
   return (

@@ -4,6 +4,7 @@ import { ethers } from 'ethers';
 
 import { useStateContext } from '../context';
 import { CountBox, Loader } from '../components';
+import { daysLeft, getGoogleDriveImage } from '../utils';
 
 const CampaignDetail = () => {
   const { id } = useParams();
@@ -15,12 +16,6 @@ const CampaignDetail = () => {
   const [amount, setAmount] = useState('');
   const [donators, setDonators] = useState([]);
   const [campaign, setCampaign] = useState(state);
-
-  const remainingDays = (deadline) => {
-    const difference = new Date(deadline * 1000).getTime() - Date.now();
-    const days = Math.ceil(difference / (1000 * 3600 * 24));
-    return days > 0 ? days : 0;
-  };
 
   const fetchDonators = async () => {
     const data = await getDonations(id);
@@ -77,7 +72,7 @@ const CampaignDetail = () => {
 
       <div className="w-full flex md:flex-row flex-col mt-10 gap-[30px]">
         <div className="flex-1 flex-col">
-          <img src={campaign?.image} alt="campaign" className="w-full h-[410px] object-cover rounded-xl"/>
+          <img src={getGoogleDriveImage(campaign?.image)} alt="campaign" className="w-full h-[410px] object-cover rounded-xl"/>
           <div className="relative w-full h-[5px] bg-[#3a3a43] mt-2">
             <div className="absolute h-full bg-[#4acd8d]" style={{ width: `${Math.min((campaign?.amountCollected / campaign?.target) * 100, 100)}%`, maxWidth: '100%'}}>
             </div>
@@ -85,7 +80,7 @@ const CampaignDetail = () => {
         </div>
 
         <div className="flex md:w-[150px] w-full flex-wrap justify-between gap-[30px]">
-          <CountBox title="Days Left" value={remainingDays(campaign?.deadline)} />
+          <CountBox title="Days Left" value={daysLeft(campaign?.deadline)} />
           <CountBox title={`Raised of ${campaign?.target}`} value={campaign?.amountCollected} />
           <CountBox title="Total Donors" value={donators.length} />
         </div>
@@ -159,7 +154,7 @@ const CampaignDetail = () => {
               </button>
 
               {address?.toLowerCase() === campaign?.owner?.toLowerCase() && 
-               remainingDays(campaign?.deadline) === 0 && 
+               daysLeft(campaign?.deadline) === 0 && 
                parseFloat(campaign?.amountCollected) >= parseFloat(campaign?.target) && 
                !campaign?.claimed && (
                 <button
