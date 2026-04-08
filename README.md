@@ -1,4 +1,4 @@
-# CrowdGenesis — Decentralized Crowdfunding Platform
+# Together — Decentralized Crowdfunding Platform
 
 A complete blockchain crowdfunding application featuring Solidity smart contracts and a premium React frontend.
 
