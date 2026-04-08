@@ -50,6 +50,8 @@ const CreateCampaign = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isLoading) return;
+
     checkIfImage(form.image, async (exists) => {
       if (exists) {
         setIsLoading(true);
@@ -191,9 +193,10 @@ const CreateCampaign = () => {
         <div className="flex justify-center items-center mt-[40px]">
           <button
             type="submit"
-            className="font-epilogue font-semibold text-[16px] leading-[26px] text-white min-h-[52px] px-10 rounded-[10px] bg-[#1dc071]"
+            disabled={isLoading}
+            className={`font-epilogue font-semibold text-[16px] leading-[26px] text-white min-h-[52px] px-10 rounded-[10px] bg-[#1dc071] ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            Submit new campaign
+            {isLoading ? "Sending..." : "Submit new campaign"}
           </button>
         </div>
       </form>

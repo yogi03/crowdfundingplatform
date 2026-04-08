@@ -12,23 +12,34 @@ export const calculateBarPercentage = (target, amountCollected) => {
 };
 
 export const checkIfImage = (url, callback) => {
+  let isCalled = false;
+  const singleCallback = (value) => {
+    if (!isCalled) {
+      isCalled = true;
+      callback(value);
+    }
+  };
+
   if (!url) {
-    callback(false);
+    singleCallback(false);
     return;
   }
 
   if (url.startsWith('data:image')) {
-    callback(true);
+    singleCallback(true);
     return;
   }
 
   const img = new Image();
   img.src = url;
 
-  if (img.complete) callback(true);
+  if (img.complete) {
+    singleCallback(true);
+    return;
+  }
 
-  img.onload = () => callback(true);
-  img.onerror = () => callback(false);
+  img.onload = () => singleCallback(true);
+  img.onerror = () => singleCallback(false);
 };
 
 export const getGoogleDriveImage = (url) => {
